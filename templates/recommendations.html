@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+{% include 'navbar.html' %}
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>个性化推荐</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(#141e30, #243b55);
+      color: #fff;
+      overflow: auto; /* 允许滚动 */
+    }
+
+    /* 主内容居中区域 */
+    .page-wrapper {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      z-index: 1;
+      padding: 40px 0;
+    }
+
+    .main-content {
+      max-width: 700px;
+      width: 100%;
+      padding: 20px;
+      overflow-x: auto;
+      max-height: calc(100vh - 100px); /* 中间内容可滚动 */
+      box-sizing: border-box;
+      /* 淡入向上动画 */
+      animation: fadeInUp 1s ease-out forwards;
+    }
+
+    .container {
+      width: 100%;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 10px;
+      text-align: center;
+      /* 淡入向上动画 */
+      animation: fadeInUp 1s ease-out forwards;
+    }
+
+    .container h2 {
+      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    .spot-card {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+      text-align: left;
+      transition: background 0.3s, transform 0.3s;
+      cursor: pointer;
+      /* 出场时淡入向上 */
+      animation: fadeInUp 0.5s ease-out forwards;
+    }
+
+    .spot-card:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.03);
+    }
+
+    .spot-card img {
+      width: 100px;
+      height: 80px;
+      border-radius: 5px;
+      margin-right: 15px;
+    }
+
+    .spot-info {
+      flex: 1;
+    }
+
+    .spot-name {
+      font-size: 18px;
+      font-weight: bold;
+      color: #03e9f4;
+    }
+
+    .spot-score {
+      font-size: 14px;
+      color: #FF5733;
+    }
+
+    a.spot-link {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* 四角容器定位 */
+    .corner-box {
+      position: fixed;
+      width: 220px;
+      height: 160px;
+      padding: 10px;
+      z-index: 900; /* 低于导航栏 */
+      /* 每个角落都有滑入动画 */
+    }
+
+    .top-left { top: 20px; left: 20px; animation: slideInTL 1s ease-out forwards; }
+    .top-right { top: 20px; right: 20px; animation: slideInTR 1s ease-out forwards; }
+    .bottom-left { bottom: 20px; left: 20px; animation: slideInBL 1s ease-out forwards; }
+    .bottom-right { bottom: 20px; right: 20px; animation: slideInBR 1s ease-out forwards; }
+
+    /* 卡片轮播结构 */
+    .carousel {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .slide.active {
+      opacity: 1;
+      position: relative;
+    }
+
+    .stacked-card {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      transition: transform 0.3s;
+      cursor: pointer;
+      height: 100%;
+    }
+
+    .stacked-card:hover {
+      transform: scale(1.03);
+    }
+
+    .stacked-card h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      color: #03e9f4;
+    }
+
+    .stacked-card p {
+      margin: 0;
+      font-size: 14px;
+      color: #fff;
+      line-height: 1.4;
+    }
+
+    /* 淡入向上动画关键帧 */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 四角滑入动画关键帧 */
+    @keyframes slideInTL {
+      from { transform: translate(-20px, -20px); opacity: 0; }
+      to { transform: translate(0,0); opacity: 1; }
+    }
+    @keyframes slideInTR {
+      from { transform: translate(20px, -20px); opacity: 0; }
+      to { transform: translate(0,0); opacity: 1; }
+    }
+    @keyframes slideInBL {
+      from { transform: translate(-20px, 20px); opacity: 0; }
+      to { transform: translate(0,0); opacity: 1; }
+    }
+    @keyframes slideInBR {
+      from { transform: translate(20px, 20px); opacity: 0; }
+      to { transform: translate(0,0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <!-- 四角轮播容器 -->
+  <div class="corner-box top-left" id="carousel-tl">
+    <div class="carousel">
+      <div class="stacked-card slide active">
+        <h3>热门景点排行</h3>
+        <p>探索上海最受欢迎的景点。</p>
+      </div>
+      <div class="stacked-card slide">
+        <h3>历史文化地标</h3>
+        <p>深入了解城市文化底蕴。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="corner-box top-right" id="carousel-tr">
+    <div class="carousel">
+      <div class="stacked-card slide active">
+        <h3>旅行小贴士</h3>
+        <p>带上这些小知识，旅途更安心。</p>
+      </div>
+      <div class="stacked-card slide">
+        <h3>安全须知</h3>
+        <p>出行前别忘了安全第一。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="corner-box bottom-left" id="carousel-bl">
+    <div class="carousel">
+      <div class="stacked-card slide active">
+        <h3>本地美食</h3>
+        <p>尝遍城市的风味小吃。</p>
+      </div>
+      <div class="stacked-card slide">
+        <h3>夜市推荐</h3>
+        <p>夜晚的城市同样精彩。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="corner-box bottom-right" id="carousel-br">
+    <div class="carousel">
+      <div class="stacked-card slide active">
+        <h3>活动预告</h3>
+        <p>近期城市活动一览。</p>
+      </div>
+      <div class="stacked-card slide">
+        <h3>展览演出</h3>
+        <p>不能错过的艺术体验。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 中间主推荐内容 -->
+  <div class="page-wrapper">
+    <div class="main-content">
+      <div class="container">
+        <h2>🌟 你的个性化推荐</h2>
+        <div id="recommendation-output">
+          <!-- JavaScript 插入推荐内容 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS 部分 -->
+  <script>
+    async function fetchRecommendations() {
+      try {
+        const response = await fetch("/recommendations_api", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
+        });
+        const data = await response.json();
+        updateRecommendations(data.recommendations);
+      } catch (error) {
+        console.error("获取推荐失败:", error);
+        document.getElementById("recommendation-output").innerHTML = "<p>❌ 获取推荐失败，请稍后重试。</p>";
+      }
+    }
+
+    function updateRecommendations(recommendations) {
+      const container = document.getElementById("recommendation-output");
+      container.innerHTML = "";
+      if (recommendations && recommendations.length > 0) {
+        recommendations.forEach(spot => {
+          container.innerHTML += `
+            <a class="spot-link" href="/attraction/${spot.id}" target="_blank">
+              <div class="spot-card">
+                <img src="${spot.image || 'default.jpg'}" alt="${spot.name}">
+                <div class="spot-info">
+                  <div class="spot-name">${spot.name}</div>
+                  <div class="spot-score">评分: ⭐${spot.score}</div>
+                </div>
+              </div>
+            </a>
+          `;
+        });
+      } else {
+        container.innerHTML = "<p>⚠️ 暂无推荐</p>";
+      }
+    }
+
+    function initCornerCarousel(id, interval = 4000) {
+      const box = document.getElementById(id);
+      const slides = box.querySelectorAll('.slide');
+      let index = 0;
+      setInterval(() => {
+        slides[index].classList.remove('active');
+        index = (index + 1) % slides.length;
+        slides[index].classList.add('active');
+      }, interval);
+    }
+
+    window.onload = () => {
+      fetchRecommendations();
+      initCornerCarousel("carousel-tl");
+      initCornerCarousel("carousel-tr");
+      initCornerCarousel("carousel-bl");
+      initCornerCarousel("carousel-br");
+    };
+  </script>
+</body>
+</html>

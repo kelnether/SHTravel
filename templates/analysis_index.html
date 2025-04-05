@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+{% include 'navbar.html' %}
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>历史数据分析 Dashboard</title>
+  <!-- 引入 ECharts -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(#141e30, #243b55);
+      color: #fff;
+    }
+    /* 动画关键帧定义 */
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes slideInLeft {
+      from { transform: translateX(-100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    /* 整体 Dashboard 外部容器，采用毛玻璃效果，淡入缩放 */
+    .dashboard-wrapper {
+      display: flex;
+      max-width: 1200px;
+      margin: 50px auto;
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 10px;
+      overflow: hidden;
+      animation: fadeInScale 1s ease-out forwards;
+    }
+    /* 左侧导航栏，飞入效果 */
+    .sidebar {
+      width: 200px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 20px;
+      box-sizing: border-box;
+      animation: slideInLeft 1s ease-out forwards;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sidebar ul li {
+      padding: 15px;
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-align: center;
+    }
+    .sidebar ul li.active,
+    .sidebar ul li:hover {
+      background: rgba(3, 233, 244, 0.8);
+      font-weight: bold;
+    }
+    /* 右侧主内容区域，飞入效果 */
+    .main-content {
+      flex: 1;
+      padding: 30px;
+      box-sizing: border-box;
+      animation: slideInRight 1s ease-out forwards;
+    }
+    /* 景点下拉过滤，淡入 */
+    .filter-container {
+      text-align: center;
+      margin-bottom: 30px;
+      animation: fadeIn 1s ease-out forwards;
+    }
+    .filter-container label {
+      margin-right: 10px;
+      font-size: 16px;
+    }
+    .filter-container select {
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    /* 标签内容区域 */
+    .tab-content {
+      display: none;
+      animation: fadeIn 1s ease-out forwards;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    /* 图表容器，固定高度并淡入 */
+    .chart-container {
+      width: 100%;
+      height: 400px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      margin-bottom: 20px;
+      animation: fadeIn 1s ease-out forwards;
+    }
+    /* 图表 DOM 元素填充容器 */
+    .chart-container > div {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <!-- 左侧导航栏 -->
+    <div class="sidebar">
+      <ul>
+        <li class="nav-item active" data-tab="hourly-tab">按小时统计</li>
+        <li class="nav-item" data-tab="daily-tab">每日趋势</li>
+        <li class="nav-item" data-tab="scenic-tab">景点分布</li>
+        <li class="nav-item" data-tab="heatmap-tab">热力图</li>
+      </ul>
+    </div>
+    <!-- 右侧主内容区域 -->
+    <div class="main-content">
+      <!-- 景点下拉过滤 -->
+      <div class="filter-container">
+        <label for="scenicSelect">选择景点：</label>
+        <select id="scenicSelect">
+          <option value="">所有景点</option>
+        </select>
+      </div>
+      <!-- 标签内容区域 -->
+      <div id="hourly-tab" class="tab-content active">
+        <div class="chart-container">
+          <div id="hourlyChart"></div>
+        </div>
+      </div>
+      <div id="daily-tab" class="tab-content">
+        <div class="chart-container">
+          <div id="dailyChart"></div>
+        </div>
+      </div>
+      <div id="scenic-tab" class="tab-content">
+        <div class="chart-container">
+          <div id="scenicChart"></div>
+        </div>
+      </div>
+      <div id="heatmap-tab" class="tab-content">
+        <div class="chart-container">
+          <div id="heatmapChart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let hourlyChart, dailyChart, scenicChart, heatmapChart;
+
+    // 加载景点下拉框数据
+    function loadScenicNames() {
+      fetch('/analysis/api/scenic_names')
+        .then(response => response.json())
+        .then(data => {
+          const select = document.getElementById('scenicSelect');
+          data.forEach(scenic => {
+            const option = document.createElement('option');
+            option.value = scenic;
+            option.text = scenic;
+            select.appendChild(option);
+          });
+        });
+    }
+
+    // 根据景点过滤，获取按小时统计数据并绘制柱状图（ECharts）
+    function fetchHistoryData(scenic) {
+      let url = '/analysis/api/history';
+      if (scenic) {
+        url += `?scenic=${encodeURIComponent(scenic)}`;
+      }
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          const hourlyCounts = {};
+          data.forEach(item => {
+            const hour = item.hour;
+            hourlyCounts[hour] = (hourlyCounts[hour] || 0) + item.visitor_count;
+          });
+          const hours = Array.from({length: 24}, (_, i) => i);
+          const counts = hours.map(h => hourlyCounts[h] || 0);
+          if (!hourlyChart) {
+            hourlyChart = echarts.init(document.getElementById('hourlyChart'));
+          }
+          const option = {
+            title: { text: '按小时统计', textStyle: { color: '#fff' } },
+            tooltip: {},
+            xAxis: {
+              type: 'category',
+              data: hours,
+              axisLine: { lineStyle: { color: '#fff' } }
+            },
+            yAxis: {
+              type: 'value',
+              axisLine: { lineStyle: { color: '#fff' } }
+            },
+            series: [{
+              data: counts,
+              type: 'bar',
+              itemStyle: { color: 'rgba(54, 162, 235, 0.6)' }
+            }]
+          };
+          hourlyChart.setOption(option);
+        });
+    }
+
+    // 获取每日总客流数据并绘制折线图
+    function fetchDailyData(scenic) {
+      let url = '/analysis/api/daily_total';
+      if (scenic) {
+        url += `?scenic=${encodeURIComponent(scenic)}`;
+      }
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          data.sort((a, b) => new Date(a.date) - new Date(b.date));
+          const dates = data.map(item => item.date);
+          const counts = data.map(item => item.visitor_count);
+          if (!dailyChart) {
+            dailyChart = echarts.init(document.getElementById('dailyChart'));
+          }
+          const option = {
+            title: { text: '每日趋势', textStyle: { color: '#fff' } },
+            tooltip: {},
+            xAxis: {
+              type: 'category',
+              data: dates,
+              axisLabel: { rotate: 45 },
+              axisLine: { lineStyle: { color: '#fff' } }
+            },
+            yAxis: {
+              type: 'value',
+              axisLine: { lineStyle: { color: '#fff' } }
+            },
+            series: [{
+              data: counts,
+              type: 'line',
+              smooth: true,
+              lineStyle: { color: 'rgba(255, 99, 132, 1)' }
+            }]
+          };
+          dailyChart.setOption(option);
+        });
+    }
+
+    // 获取各景点总客流数据并绘制饼图
+    function fetchScenicDistribution() {
+      fetch('/analysis/api/scenic_distribution')
+        .then(response => response.json())
+        .then(data => {
+          const labels = data.map(item => item.scenic);
+          const counts = data.map(item => item.visitor_count);
+          if (!scenicChart) {
+            scenicChart = echarts.init(document.getElementById('scenicChart'));
+          }
+          const option = {
+            title: { text: '景点分布', textStyle: { color: '#fff' } },
+            tooltip: { trigger: 'item' },
+            series: [{
+              type: 'pie',
+              radius: '50%',
+              data: labels.map((name, idx) => ({ value: counts[idx], name })),
+              emphasis: {
+                itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' }
+              }
+            }]
+          };
+          scenicChart.setOption(option);
+        });
+    }
+
+    // 获取热力图数据，并绘制热力图（x: 日期, y: 小时）
+    function fetchHeatmapData(scenic) {
+      let url = '/analysis/api/heatmap';
+      if (scenic) {
+        url += `?scenic=${encodeURIComponent(scenic)}`;
+      }
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          const datesSet = new Set();
+          const hoursSet = new Set();
+          data.forEach(item => {
+            datesSet.add(item.date);
+            hoursSet.add(item.hour);
+          });
+          const dates = Array.from(datesSet).sort((a, b) => new Date(a) - new Date(b));
+          const hours = Array.from(hoursSet).sort((a, b) => a - b);
+          const heatmapData = data.map(item => [dates.indexOf(item.date), hours.indexOf(item.hour), item.visitor_count]);
+          if (!heatmapChart) {
+            heatmapChart = echarts.init(document.getElementById('heatmapChart'));
+          }
+          const option = {
+            title: { text: '热力图', textStyle: { color: '#fff' } },
+            tooltip: {},
+            xAxis: {
+              type: 'category',
+              data: dates,
+              axisLabel: { rotate: 45 },
+              axisLine: { lineStyle: { color: '#fff' } }
+            },
+            yAxis: {
+              type: 'category',
+              data: hours,
+              axisLine: { lineStyle: { color: '#fff' } }
+            },
+            visualMap: {
+              min: 0,
+              max: Math.max(...data.map(item => item.visitor_count)),
+              calculable: true,
+              orient: 'horizontal',
+              left: 'center',
+              bottom: '15%'
+            },
+            series: [{
+              name: '客流量',
+              type: 'heatmap',
+              data: heatmapData,
+              label: { show: true },
+              emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
+            }]
+          };
+          heatmapChart.setOption(option);
+        });
+    }
+
+    // 左侧导航栏切换逻辑
+    function setupTabs() {
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => {
+        item.addEventListener('click', function(){
+          navItems.forEach(nav => nav.classList.remove('active'));
+          this.classList.add('active');
+          const tabId = this.getAttribute('data-tab');
+          const contents = document.querySelectorAll('.tab-content');
+          contents.forEach(content => content.classList.remove('active'));
+          document.getElementById(tabId).classList.add('active');
+        });
+      });
+    }
+
+    // 当景点下拉框变化时，更新图表
+    function setupFilter() {
+      document.getElementById('scenicSelect').addEventListener('change', function(){
+        const scenic = this.value;
+        fetchHistoryData(scenic);
+        fetchDailyData(scenic);
+        fetchHeatmapData(scenic);
+      });
+    }
+
+    // 初始化页面数据和事件绑定
+    document.addEventListener('DOMContentLoaded', function(){
+      loadScenicNames();
+      fetchHistoryData("");
+      fetchDailyData("");
+      fetchScenicDistribution();
+      fetchHeatmapData("");
+      setupTabs();
+      setupFilter();
+    });
+
+    // 窗口调整时，图表自适应容器尺寸
+    window.addEventListener('resize', function(){
+      if(hourlyChart) hourlyChart.resize();
+      if(dailyChart) dailyChart.resize();
+      if(scenicChart) scenicChart.resize();
+      if(heatmapChart) heatmapChart.resize();
+    });
+  </script>
+</body>
+</html>
