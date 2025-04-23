@@ -18,14 +18,10 @@ def convert_sight_level(level):
 
 # 应用转换函数
 df['sightLevelScore'] = df['sightLevelStr'].apply(convert_sight_level)
-
 # 指标标准化处理（用户评分、最大承载量、交通通达度）
 df['userScore'] = df['commentScore'] / 5.0 * 100  # 用户评分最大5.0标准化到100
-
-df['historicalVisitorFlowScore'] = df['heatScore']  
-
+df['historicalVisitorFlowScore'] = df['heatScore']
 df['capacityScore'] = (df['maxCapacity'] / df['maxCapacity'].max()) * 100
-
 df['trafficScore'] = (df['trafficAccessibility'] / df['trafficAccessibility'].max()) * 100
 
 # 计算综合热度得分

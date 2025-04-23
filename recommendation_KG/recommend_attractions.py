@@ -2,7 +2,7 @@
 from neo4j import GraphDatabase
 
 # 连接 Neo4j
-driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "20031129"))
+driver = GraphDatabase.driver("bolt://localhost:7689", auth=("neo4j", "20031129"))
 
 # 推荐景点（基于景点相似性、用户偏好类别和用户搜索记录的模糊匹配）
 def recommend_attractions(tx, user_id):

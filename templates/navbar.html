@@ -1,97 +1,132 @@
 <!DOCTYPE html>
 <html lang="zh">
-<!--
-<link rel="stylesheet" href="{{ url_for('static', filename='css/tourism_data.css') }}">
-<script src="{{ url_for('static', filename='js/tourism_data.js') }}" defer></script>
--->
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>旅游推荐系统</title>
-    <style>
-        /* 修改后的导航栏样式，匹配登录/注册页面风格 */
-        .navbar {
-            background: linear-gradient(90deg, #141e30, #243b55);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            font-family: sans-serif;
-        }
-        .navbar .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #fff;
-        }
-        .navbar ul {
-            list-style: none;
-            display: flex;
-            margin: 0;
-            padding: 0;
-        }
-        .navbar ul li {
-            margin: 0 15px;
-        }
-        .navbar ul li a {
-            text-decoration: none;
-            color: #fff;
-            font-size: 16px;
-            transition: 0.3s;
-            padding: 10px 15px;
-        }
-        .navbar ul li a:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 5px;
-        }
-        .navbar .auth-buttons {
-            display: flex;
-            gap: 10px;
-        }
-        .navbar .btn {
-            text-decoration: none;
-            color: #fff;
-            padding: 10px 15px;
-            border-radius: 5px;
-            transition: 0.3s;
-            font-size: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-        }
-        .navbar .btn-login {
-            background: transparent;
-        }
-        .navbar .btn-register {
-            background: #03e9f4;
-            color: #fff;
-            border: none;
-        }
-        .navbar .btn:hover {
-            opacity: 0.8;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>旅游推荐系统</title>
+  <style>
+    /* 防止固定导航栏遮挡页面内容 */
+    body {
+      margin: 0;
+      padding-top: 80px; /* 根据导航栏高度调整 */
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(#141e30, #243b55);
+    }
+    /* 固定顶部的玻璃质感导航栏 */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(20, 30, 48, 0.85);
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      animation: fadeInDown 1s ease-out forwards;
+    }
+    /* 左侧LOGO区域 */
+    .navbar .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+      padding-right: 10px;
+      border-right: 2px solid rgba(255, 255, 255, 0.3);
+      margin-right: 10px;
+    }
+    /* 中央跳转链接区域 */
+    .navbar .nav-links {
+      list-style: none;
+      display: flex;
+      margin: 0;
+      padding: 0;
+      gap: 20px;
+    }
+    /* 初始状态：毛玻璃效果，无白色边框，依靠阴影突出立体感 */
+    .navbar .nav-links li a {
+      text-decoration: none;
+      color: #fff;
+      font-size: 16px;
+      padding: 10px 15px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+    }
+    /* 鼠标悬停时加深毛玻璃效果的背景色及阴影 */
+    .navbar .nav-links li a:hover {
+      transform: translateY(-3px);
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+    }
+    /* 右侧登录/登出区域，整体向左移动 */
+    .navbar .auth-buttons {
+      display: flex;
+      gap: 10px;
+      padding-left: 10px;
+      border-left: 2px solid rgba(255, 255, 255, 0.3);
+      margin-left: 10px;
+    }
+    .navbar .btn {
+      text-decoration: none;
+      color: #fff;
+      padding: 10px 15px;
+      border-radius: 5px;
+      font-size: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      transition: background 0.3s, opacity 0.3s;
+    }
+    .navbar .btn-login {
+      background: transparent;
+    }
+    .navbar .btn-register {
+      background: #03e9f4;
+      border: none;
+    }
+    .navbar .btn:hover {
+      opacity: 0.8;
+    }
+    /* 导航栏淡入动画 */
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
 </head>
 <body>
-
-    <nav class="navbar">
-        <div class="logo">🏞️ 旅游大数据分析推荐</div>
-        <ul>
-            <li><a href="/">🏠 主页</a></li>
-            <li><a href="/search">🔍 搜索景点</a></li>
-            <li><a href="/recommendations">✨ 个性化推荐</a></li>
-            <li><a href="/recommendation_ai"> 问问deepseek</a> </li>
-            <li><a href="/analysis"> DashBoard</a> </li>
-            <li><a href="/predictions"> 客流量预测</a> </li>
-            <li><a href="/profile"> 个人中心</a> </li>
-        </ul>
-        <div class="auth-buttons">
-            {% if logged_in %}
-                <a href="/logout" class="btn btn-login">🚪 退出</a>
-            {% else %}
-                <a href="/login" class="btn btn-login">🔑 登录</a>
-                <a href="/register" class="btn btn-register">📝 注册</a>
-            {% endif %}
-        </div>
-    </nav>
-
+  <nav class="navbar">
+    <div class="logo">🏞️ 乐游上海～大数据乐游推荐</div>
+    <ul class="nav-links">
+      <li><a href="/">🏠 主页</a></li>
+      <li><a href="/search">🔍 搜索景点</a></li>
+      <li><a href="/recommendations">✨ 个性化推荐</a></li>
+      <li><a href="/recommendation_ai">问问deepseek</a></li>
+      <li><a href="/analysis">DashBoard</a></li>
+      <li><a href="/prediction">客流量预测</a></li>
+      <li><a href="/profile">个人中心</a></li>
+    </ul>
+    <div class="auth-buttons">
+      {% if logged_in %}
+        <a href="/logout" class="btn btn-login">🚪 退出</a>
+      {% else %}
+        <a href="/login" class="btn btn-login">🔑 登录</a>
+        <a href="/register" class="btn btn-register">📝 注册</a>
+      {% endif %}
+    </div>
+  </nav>
+  <!-- 页面主体内容 -->
+  <div class="content">
+    <p></p>
+  </div>
 </body>
 </html>

@@ -62,3 +62,8 @@ def scenic_distribution():
     df = raw_data.copy()
     scenic_total = df.groupby('scenic')['visitor_count'].sum().reset_index()
     return jsonify(scenic_total.to_dict(orient='records'))
+
+
+# 定义存放预测数据文件的文件夹路径
+PREDICTIONS_FOLDER = "visitors_flowrate_pred_arima/csv_predictions"
+

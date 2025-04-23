@@ -1,13 +1,16 @@
+import os
 import subprocess  # 📌 用于运行外部 Python 文件
 import sys
 
 import bcrypt
+import pandas as pd
 import pymysql
 from flask import Flask, redirect, url_for, render_template, request, jsonify, session
 
 from ai_recommendation import generate_recommendation
 from analysis import analysis_bp
 from bigdata import bigdata_bp
+from prediction import prediction_bp
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"  # Flask session
@@ -32,6 +35,8 @@ sys.stderr.reconfigure(encoding='utf-8')
 app.register_blueprint(bigdata_bp)
 app.register_blueprint(analysis_bp)
 
+app.register_blueprint(prediction_bp)
+
 
 # 📌 1. 直接运行 Neo4j 相关 Python 文件
 def run_script(script_name):
@@ -51,7 +56,7 @@ def inject_logged_in():
 
 # 📌 2. 主页（带导航栏）
 @app.route('/')
-def index_tem():
+def index():
     return redirect('http://localhost:3001/#/index')
 
 
@@ -323,10 +328,10 @@ def recommendations_api():
 
     recommended_spot_names = [spot[0] for spot in recommended_spots]
 
-    # 从数据库获取推荐景点完整信息
     conn = get_db_connection()
     cursor = conn.cursor()
     recommendations_info = []
+
     if recommended_spot_names:
         placeholders = ', '.join(['%s'] * len(recommended_spot_names))
         query = f"""
@@ -336,6 +341,19 @@ def recommendations_api():
         """
         cursor.execute(query, tuple(recommended_spot_names))
         recommendations_info = cursor.fetchall()
+    else:
+        # 当主推荐为空时，调用默认推荐（随机打分保证每次结果不同）
+        print("❌ 主推荐为空，调用默认随机推荐...")
+        default_query = """
+        SELECT poiName, sightCategoryInfo, commentScore, coverImageUrl, id
+        FROM attractions
+        WHERE commentScore IS NOT NULL
+        ORDER BY commentScore + RAND() DESC
+        LIMIT 5;
+        """
+        cursor.execute(default_query)
+        recommendations_info = cursor.fetchall()
+
     cursor.close()
     conn.close()
 
@@ -539,6 +557,7 @@ def profile():
         graph_preferences=graph_preferences,
         graph_searches=graph_searches
     )
+
 
 if __name__ == '__main__':
     app.run(debug=True)

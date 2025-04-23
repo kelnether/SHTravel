@@ -12,9 +12,9 @@ bigdata_bp = Blueprint('bigdata', __name__, url_prefix='/bigdata',
 DATA_FOLDER = os.path.join(os.path.dirname(__file__), 'data_visitors_flowrate')
 
 # 加载历史数据 CSV 文件（确保文件结构和列名一致）
-data_july = pd.read_csv(os.path.join(DATA_FOLDER, '2018.7.csv'), encoding='gb18030')
-data_aug = pd.read_csv(os.path.join(DATA_FOLDER, '2018.8.csv'), encoding='gb18030')
-data_sep = pd.read_csv(os.path.join(DATA_FOLDER, '2018.9.csv'), encoding='gb18030')
+data_july = pd.read_csv(os.path.join(DATA_FOLDER, 'july.csv'), encoding='gb18030')
+data_aug = pd.read_csv(os.path.join(DATA_FOLDER, 'aug.csv'), encoding='gb18030')
+data_sep = pd.read_csv(os.path.join(DATA_FOLDER, 'sep.csv'), encoding='gb18030')
 data_all = pd.concat([data_july, data_aug, data_sep], ignore_index=True)
 #predicted_data = pd.read_csv(os.path.join(DATA_FOLDER, 'prediction.csv'), encoding='gb18030')
 

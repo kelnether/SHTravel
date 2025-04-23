@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+{% include 'navbar.html' %}
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>预测客流量 Dashboard</title>
+  <!-- 引入 ECharts -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(#141e30, #243b55);
+      color: #fff;
+    }
+    /* 动画关键帧定义 */
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes slideInLeft {
+      from { transform: translateX(-100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    /* 整体 Dashboard 外部容器，采用毛玻璃效果、淡入缩放，并向下移动避开顶部导航栏 */
+    .dashboard-wrapper {
+      display: flex;
+      max-width: 1200px;
+      margin: 120px auto;
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 10px;
+      overflow: hidden;
+      animation: fadeInScale 1s ease-out forwards;
+    }
+    /* 左侧导航栏，飞入效果 */
+    .sidebar {
+      width: 200px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 20px;
+      box-sizing: border-box;
+      animation: slideInLeft 1s ease-out forwards;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sidebar ul li {
+      padding: 15px;
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-align: center;
+    }
+    .sidebar ul li.active,
+    .sidebar ul li:hover {
+      background: rgba(3, 233, 244, 0.8);
+      font-weight: bold;
+    }
+    /* 右侧主内容区域，飞入效果 */
+    .main-content {
+      flex: 1;
+      padding: 30px;
+      box-sizing: border-box;
+      animation: slideInRight 1s ease-out forwards;
+    }
+    /* 景点下拉过滤，淡入 */
+    .filter-container {
+      text-align: center;
+      margin-bottom: 30px;
+      animation: fadeIn 1s ease-out forwards;
+    }
+    .filter-container label {
+      margin-right: 10px;
+      font-size: 16px;
+    }
+    .filter-container select {
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    /* 标签内容区域 */
+    .tab-content {
+      display: none;
+      animation: fadeIn 1s ease-out forwards;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    /* 图表容器，固定高度并淡入 */
+    .chart-container {
+      width: 100%;
+      height: 400px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      margin-bottom: 20px;
+      animation: fadeIn 1s ease-out forwards;
+    }
+    /* 图表 DOM 元素填充容器 */
+    .chart-container > div {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <!-- 左侧导航栏 -->
+    <div class="sidebar">
+      <ul>
+        <!-- 此处仅设一个导航项 -->
+        <li class="nav-item active" data-tab="prediction-tab">预测客流量</li>
+      </ul>
+    </div>
+    <!-- 右侧主内容区域 -->
+    <div class="main-content">
+      <!-- 景点下拉过滤 -->
+      <div class="filter-container">
+        <label for="scenicSelect">选择景点：</label>
+        <select id="scenicSelect">
+          <option value="">所有景点</option>
+        </select>
+      </div>
+      <!-- 预测图表标签区域 -->
+      <div id="prediction-tab" class="tab-content active">
+        <div class="chart-container">
+          <div id="predictionChart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let myChart;
+
+    // 加载景点名称列表
+    function loadScenicNames() {
+      fetch('/prediction/api/scenic_names')
+        .then(response => response.json())
+        .then(data => {
+          console.log("景点列表：", data);
+          const select = document.getElementById('scenicSelect');
+          data.forEach(scenic => {
+            let option = document.createElement('option');
+            option.value = scenic;
+            option.text = scenic;
+            select.appendChild(option);
+          });
+        });
+    }
+
+    // 根据选择的景点获取预测数据并绘制柱状图
+    function fetchAndRenderPrediction(scenic) {
+      if (!scenic) return;
+      fetch('/prediction/api/prediction?scenic=' + encodeURIComponent(scenic))
+        .then(response => response.json())
+        .then(data => {
+          console.log("原始返回数据：", data);
+          // 按返回数据构造固定小时的数组：若数据重复则聚合取平均，缺失小时填 0
+          let hourData = {};
+          data.forEach(item => {
+            let hr = parseInt(item.hour);
+            if (hourData[hr] === undefined) {
+              hourData[hr] = { total: item.visitor_count, count: 1 };
+            } else {
+              hourData[hr].total += item.visitor_count;
+              hourData[hr].count += 1;
+            }
+          });
+          // 构造横坐标（8点～20点）及相应的数值数组
+          let hours = [];
+          let visitorValues = [];
+          for (let h = 8; h <= 20; h++) {
+            hours.push(h);
+            if (hourData[h] !== undefined) {
+              visitorValues.push(hourData[h].total / hourData[h].count);
+            } else {
+              visitorValues.push(0);
+            }
+          }
+          console.log("整理后的 visitorValues：", visitorValues);
+
+          // 当数值差距较小时进行线性放大（可选）
+          const minVal = Math.min(...visitorValues);
+          const maxVal = Math.max(...visitorValues);
+          const diff = maxVal - minVal;
+          const desiredDiff = 50;  // 期望最小差值
+          const amplification = (diff !== 0 && diff < desiredDiff) ? desiredDiff / diff : 1;
+          const adjustedValues = visitorValues.map(val => (amplification !== 1 ? (val - minVal) * amplification + minVal : val));
+          console.log("放大后的 adjustedValues：", adjustedValues);
+
+          // 根据原始值判断颜色：低于50使用绿色，高于500使用红色，其余使用黄色
+          const seriesData = adjustedValues.map((val, idx) => {
+            const originalValue = visitorValues[idx];
+            let gradient;
+            if (originalValue < 50) {
+              // 绿色渐变（低饱和低亮度）
+              gradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#6B9C6B' },
+                { offset: 1, color: '#497749' }
+              ]);
+            } else if (originalValue > 500) {
+              // 红色渐变（低饱和低亮度）
+              gradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#BB6B6B' },
+                { offset: 1, color: '#8A3B3B' }
+              ]);
+            } else {
+              // 黄色渐变（低饱和低亮度）
+              gradient = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#C8A05B' },
+                { offset: 1, color: '#A67C39' }
+              ]);
+            }
+            return {
+              value: Math.round(val),
+              original: Math.round(originalValue),
+              itemStyle: { color: gradient }
+            };
+          });
+          console.log("构造后的 seriesData：", seriesData);
+
+          const option = {
+            title: {
+              text: `预测客流量 - ${scenic}`,
+              left: 'center',
+              textStyle: { color: '#fff' }
+            },
+            tooltip: {
+              trigger: 'axis',
+              formatter: function (params) {
+                let dataItem = params[0].data;
+                return params[0].axisValue + "时: " + dataItem.original;
+              }
+            },
+            xAxis: {
+              type: 'category',
+              data: hours,
+              name: '小时',
+              axisLine: { lineStyle: { color: '#fff' } }
+            },
+            yAxis: {
+              type: 'value',
+              name: '人数',
+              axisLine: { lineStyle: { color: '#fff' } }
+            },
+            series: [{
+              type: 'bar',
+              data: seriesData,
+              barWidth: '50%'
+            }]
+          };
+
+          if (!myChart) {
+            myChart = echarts.init(document.getElementById('predictionChart'));
+          }
+          myChart.setOption(option);
+        })
+        .catch(err => {
+          console.error("获取预测数据失败：", err);
+        });
+    }
+
+    // 初始化页面和事件绑定
+    document.addEventListener('DOMContentLoaded', function(){
+      loadScenicNames();
+      // 绑定下拉框变化更新预测图表
+      document.getElementById('scenicSelect').addEventListener('change', function(){
+        const scenic = this.value;
+        console.log("选中的景点：", scenic);
+        fetchAndRenderPrediction(scenic);
+      });
+    });
+
+    window.addEventListener('resize', function(){
+      if (myChart) myChart.resize();
+    });
+  </script>
+</body>
+</html>

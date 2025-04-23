@@ -24,8 +24,8 @@ def generate_recommendation(prompt):
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[
-                {"role": "system", "content": f"请根据以下提示为用户生成旅游景点推荐：{prompt}。同时确保在文本最后另起一行，在‘【推荐列表】：’的后面输出你推荐的所有的景点名称，以json数组格式"},
-                {"role": "user", "content": f"请为旅游推荐生成景点建议，考虑景点特色和用户体验：{prompt}。同时确保在文本最后另起一行，在‘【推荐列表】：’的后面输出你推荐的所有的景点名称，以json数组格式"}
+                {"role": "system", "content": f"请根据以下提示为用户生成旅游景点推荐：{prompt}。同时确保在文本最后另起一行，在‘【推荐列表】：’的后面输出你推荐的所有的景点名称，以列表格式：[A,B]"},
+                {"role": "user", "content": f"请为旅游推荐生成景点建议，考虑景点特色和用户体验：{prompt}。同时确保在文本最后另起一行，在‘【推荐列表】：’的后面输出你推荐的所有的景点名称，以列表格式[A,B]"}
             ],
             temperature=1.5,
             stream=False

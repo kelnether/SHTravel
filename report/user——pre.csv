@@ -1,0 +1,4 @@
+字段名称,字段描述,数据类型,长度,是否允许空,缺省值,备注
+id,主键 ID,INT,-,NOT NULL,-,"AUTO_INCREMENT, PRIMARY KEY"
+user_id,用户ID,INT,-,NOT NULL,-,"外键，引用 users 表的 id，ON DELETE CASCADE"
+category,用户偏好类别,VARCHAR,50,NOT NULL,-,""

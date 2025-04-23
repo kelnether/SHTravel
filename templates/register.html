@@ -6,16 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>用户注册</title>
   <style>
-    html {
+    html, body {
       height: 100%;
-    }
-    body {
       margin: 0;
       padding: 0;
       font-family: sans-serif;
       background: linear-gradient(#141e30, #243b55);
     }
-    /* 注册框入场动画：从上方稍偏位置飞入并缩放 */
+    /* 注册整体容器入场动画 */
     @keyframes registerContainerAnim {
       from {
         opacity: 0;
@@ -26,32 +24,40 @@
         transform: translate(-50%, -50%) scale(1);
       }
     }
-    /* Modal 弹窗动画：淡入并缩放 */
-    @keyframes modalFadeIn {
-      from {
-        opacity: 0;
-        transform: scale(0.9);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-    .my-login-box {
+    /* 整体注册容器：左右分区 */
+    .register-container {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 400px;
-      padding: 40px;
+      width: 800px;
+      height: 500px;
       transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.5);
-      box-sizing: border-box;
+      display: flex;
       box-shadow: 0 15px 25px rgba(0, 0, 0, 0.6);
       border-radius: 10px;
-      color: #fff;
+      overflow: hidden;
       animation: registerContainerAnim 1s ease-out forwards;
     }
-    .my-login-box h2 {
+    /* 左侧视频容器，占35%宽度 */
+    .register-left {
+      width: 35%;
+      background: black;
+    }
+    .register-left video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    /* 右侧注册容器，占65%宽度，包含原有的注册功能 */
+    .register-right {
+      width: 65%;
+      padding: 40px;
+      background: rgba(0, 0, 0, 0.5);
+      box-sizing: border-box;
+      color: #fff;
+      position: relative;
+    }
+    .register-right h2 {
       margin: 0 0 30px;
       padding: 0;
       text-align: center;
@@ -88,7 +94,7 @@
       font-size: 12px;
     }
     button,
-    .my-login-box form a {
+    .register-right form a {
       background: none;
       border: 1px solid #03e9f4;
       color: #03e9f4;
@@ -104,18 +110,18 @@
       overflow: hidden;
     }
     button:hover,
-    .my-login-box form a:hover {
+    .register-right form a:hover {
       background: #03e9f4;
       color: #fff;
       border-radius: 5px;
       box-shadow: 0 0 5px #03e9f4, 0 0 25px #03e9f4, 0 0 50px #03e9f4, 0 0 100px #03e9f4;
     }
     /* 跑马灯效果 */
-    .my-login-box form a span {
+    .register-right form a span {
       position: absolute;
       display: block;
     }
-    .my-login-box form a span:nth-child(1) {
+    .register-right form a span:nth-child(1) {
       top: 0;
       left: -100%;
       width: 100%;
@@ -127,7 +133,7 @@
       0% { left: -100%; }
       50%, 100% { left: 100%; }
     }
-    .my-login-box form a span:nth-child(2) {
+    .register-right form a span:nth-child(2) {
       top: -100%;
       right: 0;
       width: 2px;
@@ -140,7 +146,7 @@
       0% { top: -100%; }
       50%, 100% { top: 100%; }
     }
-    .my-login-box form a span:nth-child(3) {
+    .register-right form a span:nth-child(3) {
       bottom: 0;
       right: -100%;
       width: 100%;
@@ -153,7 +159,7 @@
       0% { right: -100%; }
       50%, 100% { right: 100%; }
     }
-    .my-login-box form a span:nth-child(4) {
+    .register-right form a span:nth-child(4) {
       bottom: -100%;
       left: 0;
       width: 2px;
@@ -284,30 +290,40 @@
   </style>
 </head>
 <body>
-  <div class="my-login-box">
-    <h2>注册新用户</h2>
-    <div class="user-box">
-      <input type="text" id="username" required>
-      <label for="username">输入用户名</label>
+  <div class="register-container">
+    <!-- 左侧视频容器 -->
+    <div class="register-left">
+      <video autoplay loop muted>
+        <source src="static/video/1871_1744121012.mp4" type="video/mp4">
+        您的浏览器不支持 video 标签。
+      </video>
     </div>
-    <div class="user-box">
-      <input type="password" id="password" required>
-      <label for="password">输入密码</label>
+    <!-- 右侧注册容器（保留原有注册功能及偏好选择弹窗） -->
+    <div class="register-right">
+      <h2>注册新用户</h2>
+      <div class="user-box">
+        <input type="text" id="username" required>
+        <label for="username">输入用户名</label>
+      </div>
+      <div class="user-box">
+        <input type="password" id="password" required>
+        <label for="password">输入密码</label>
+      </div>
+      <!-- 按钮点击后弹出偏好选择弹窗 -->
+      <button type="button" onclick="openModal()">选择偏好</button>
+      <!-- 显示已选择的偏好 -->
+      <p id="selectedPreferences"></p>
+      <p id="result" style="text-align: center; color: #03e9f4;"></p>
+      <form onsubmit="event.preventDefault(); register();">
+        <a href="javascript:void(0)" onclick="register()">
+          注册
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </a>
+      </form>
     </div>
-    <!-- 按钮点击后弹出偏好选择弹窗 -->
-    <button onclick="openModal()">选择偏好</button>
-    <!-- 显示已选择的偏好 -->
-    <p id="selectedPreferences"></p>
-    <p id="result" style="text-align: center; color: #03e9f4;"></p>
-    <form onsubmit="event.preventDefault(); register();">
-      <a href="javascript:void(0)" onclick="register()">
-        注册
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-      </a>
-    </form>
   </div>
 
   <!-- 偏好选择弹窗 -->
@@ -379,7 +395,7 @@
       const existingBubbles = document.querySelectorAll('.bubble');
       for (const bubble of existingBubbles) {
         if (bubble.getAttribute('data-value') === newPref) {
-          // 如果已经存在则自动选择
+          // 如果已存在则自动选择
           if (!bubble.classList.contains('selected')) {
             toggleBubble(bubble);
           }
@@ -428,6 +444,13 @@
         setTimeout(() => { window.location.href = "/login"; }, 2000);
       }
     }
+
+    // 点击空白区域（弹窗背景）也退出偏好选择
+    document.getElementById('preferenceModal').addEventListener('click', function(event) {
+      if (event.target === this) {
+        savePreferences();
+      }
+    });
   </script>
 </body>
 </html>

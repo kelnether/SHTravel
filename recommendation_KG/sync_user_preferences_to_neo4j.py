@@ -3,7 +3,7 @@ import pymysql
 from neo4j import GraphDatabase
 
 # 连接 Neo4j
-driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "20031129"))
+driver = GraphDatabase.driver("bolt://localhost:7689", auth=("neo4j", "20031129"))
 
 # 连接 MySQL
 conn = pymysql.connect(

@@ -15,9 +15,9 @@ def preprocess_data():
     DATA_FOLDER = os.path.join(os.path.dirname(__file__), 'data_visitors_flowrate')
 
     # 读取 CSV 数据（GB18030 编码）
-    data_july = pd.read_csv(os.path.join(DATA_FOLDER, '2018.7.csv'), encoding='gb18030')
-    data_aug = pd.read_csv(os.path.join(DATA_FOLDER, '2018.8.csv'), encoding='gb18030')
-    data_sep = pd.read_csv(os.path.join(DATA_FOLDER, '2018.9.csv'), encoding='gb18030')
+    data_july = pd.read_csv(os.path.join(DATA_FOLDER, 'july.csv'), encoding='gb18030')
+    data_aug = pd.read_csv(os.path.join(DATA_FOLDER, 'aug.csv'), encoding='gb18030')
+    data_sep = pd.read_csv(os.path.join(DATA_FOLDER, 'sep.csv'), encoding='gb18030')
 
     # 合并所有数据
     data_all = pd.concat([data_july, data_aug, data_sep], ignore_index=True)

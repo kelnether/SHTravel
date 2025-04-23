@@ -6,16 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>用户登录</title>
   <style>
-    html {
+    html, body {
       height: 100%;
-    }
-    body {
       margin: 0;
       padding: 0;
+    }
+    body {
       font-family: sans-serif;
       background: linear-gradient(#141e30, #243b55);
     }
-    /* 登录框整体入场动画：从上方偏高位置淡入并缩放 */
+    /* 入场动画：从上方偏高位置淡入并缩放 */
     @keyframes loginContainerAnim {
       from {
         opacity: 0;
@@ -26,29 +26,47 @@
         transform: translate(-50%, -50%) scale(1);
       }
     }
-    .my-login-box {
+    /* 整体容器扩展为原来宽度的两倍，并采用 flex 分为左右两部分 */
+    .login-container {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 400px;
-      padding: 40px;
+      width: 800px;
+      height: 500px;
       transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.5);
-      box-sizing: border-box;
+      display: flex;
       box-shadow: 0 15px 25px rgba(0, 0, 0, 0.6);
       border-radius: 10px;
+      overflow: hidden;
       animation: loginContainerAnim 1s ease-out forwards;
     }
-    .my-login-box h2 {
+    /* 左侧容器，占 35% 宽度，播放视频 */
+    .login-left {
+      width: 35%;
+      background: black;
+    }
+    .login-left video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    /* 右侧容器，占 65% 宽度，保持原登录功能及样式 */
+    .login-right {
+      width: 65%;
+      padding: 40px;
+      background: rgba(0, 0, 0, 0.5);
+      box-sizing: border-box;
+    }
+    .login-right h2 {
       margin: 0 0 30px;
       padding: 0;
       color: #fff;
       text-align: center;
     }
-    .my-login-box .user-box {
+    .login-right .user-box {
       position: relative;
     }
-    .my-login-box .user-box input {
+    .login-right .user-box input {
       width: 100%;
       padding: 10px 0;
       font-size: 16px;
@@ -59,7 +77,7 @@
       outline: none;
       background: transparent;
     }
-    .my-login-box .user-box label {
+    .login-right .user-box label {
       position: absolute;
       top: 0;
       left: 0;
@@ -69,14 +87,14 @@
       pointer-events: none;
       transition: 0.5s;
     }
-    .my-login-box .user-box input:focus ~ label,
-    .my-login-box .user-box input:valid ~ label {
+    .login-right .user-box input:focus ~ label,
+    .login-right .user-box input:valid ~ label {
       top: -30px;
       left: 0;
       color: #03e9f4;
       font-size: 12px;
     }
-    .my-login-box form a {
+    .login-right form a {
       position: relative;
       display: inline-block;
       padding: 10px 20px;
@@ -89,17 +107,17 @@
       margin-top: 40px;
       letter-spacing: 4px;
     }
-    .my-login-box a:hover {
+    .login-right a:hover {
       background: #03e9f4;
       color: #fff;
       border-radius: 5px;
       box-shadow: 0 0 5px #03e9f4, 0 0 25px #03e9f4, 0 0 50px #03e9f4, 0 0 100px #03e9f4;
     }
-    .my-login-box a span {
+    .login-right a span {
       position: absolute;
       display: block;
     }
-    .my-login-box a span:nth-child(1) {
+    .login-right a span:nth-child(1) {
       top: 0;
       left: -100%;
       width: 100%;
@@ -108,14 +126,10 @@
       animation: btn-anim1 1s linear infinite;
     }
     @keyframes btn-anim1 {
-      0% {
-        left: -100%;
-      }
-      50%, 100% {
-        left: 100%;
-      }
+      0% { left: -100%; }
+      50%, 100% { left: 100%; }
     }
-    .my-login-box a span:nth-child(2) {
+    .login-right a span:nth-child(2) {
       top: -100%;
       right: 0;
       width: 2px;
@@ -125,14 +139,10 @@
       animation-delay: 0.25s;
     }
     @keyframes btn-anim2 {
-      0% {
-        top: -100%;
-      }
-      50%, 100% {
-        top: 100%;
-      }
+      0% { top: -100%; }
+      50%, 100% { top: 100%; }
     }
-    .my-login-box a span:nth-child(3) {
+    .login-right a span:nth-child(3) {
       bottom: 0;
       right: -100%;
       width: 100%;
@@ -142,14 +152,10 @@
       animation-delay: 0.5s;
     }
     @keyframes btn-anim3 {
-      0% {
-        right: -100%;
-      }
-      50%, 100% {
-        right: 100%;
-      }
+      0% { right: -100%; }
+      50%, 100% { right: 100%; }
     }
-    .my-login-box a span:nth-child(4) {
+    .login-right a span:nth-child(4) {
       bottom: -100%;
       left: 0;
       width: 2px;
@@ -159,60 +165,62 @@
       animation-delay: 0.75s;
     }
     @keyframes btn-anim4 {
-      0% {
-        bottom: -100%;
-      }
-      50%, 100% {
-        bottom: 100%;
-      }
+      0% { bottom: -100%; }
+      50%, 100% { bottom: 100%; }
     }
   </style>
 </head>
 <body>
-    <div class="my-login-box">
-        <h2>用户登录</h2>
-        <div class="user-box">
-            <input type="text" id="username" required>
-            <label for="username">输入用户名</label>
-        </div>
-        <div class="user-box">
-            <input type="password" id="password" required>
-            <label for="password">输入密码</label>
-        </div>
-        <p id="result" style="text-align: center;"></p>
-        <form onsubmit="event.preventDefault(); login();">
-            <a href="javascript:void(0)" onclick="login()">
-                登录
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-            </a>
-        </form>
+  <div class="login-container">
+    <!-- 左侧视频容器 -->
+    <div class="login-left">
+      <video autoplay loop muted>
+        <source src="static/video/1871_1744121012.mp4" type="video/mp4">
+        您的浏览器不支持 video 标签。
+      </video>
     </div>
-    <script>
-        async function login() {
-            const username = document.getElementById("username").value.trim();
-            const password = document.getElementById("password").value.trim();
-
-            if (!username || !password) {
-                document.getElementById("result").innerText = "❌ 请填写用户名和密码！";
-                return;
-            }
-
-            const response = await fetch("/login_api", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password })
-            });
-
-            const data = await response.json();
-            document.getElementById("result").innerText = data.message;
-
-            if (response.status === 200) {
-                setTimeout(() => { window.location.href = "/search"; }, 2000);
-            }
-        }
-    </script>
+    <!-- 右侧登录容器（保持原有登录功能） -->
+    <div class="login-right">
+      <h2>用户登录</h2>
+      <div class="user-box">
+        <input type="text" id="username" required>
+        <label for="username">输入用户名</label>
+      </div>
+      <div class="user-box">
+        <input type="password" id="password" required>
+        <label for="password">输入密码</label>
+      </div>
+      <p id="result" style="text-align: center; color: #fff;"></p>
+      <form onsubmit="event.preventDefault(); login();">
+        <a href="javascript:void(0)" onclick="login()">
+          登录
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </a>
+      </form>
+    </div>
+  </div>
+  <script>
+    async function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      if (!username || !password) {
+        document.getElementById("result").innerText = "❌ 请填写用户名和密码！";
+        return;
+      }
+      const response = await fetch("/login_api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await response.json();
+      document.getElementById("result").innerText = data.message;
+      if (response.status === 200) {
+        setTimeout(() => { window.location.href = "/search"; }, 2000);
+      }
+    }
+  </script>
 </body>
 </html>
